@@ -1,0 +1,50 @@
+# Python/Django
+*.py[cod]
+*__pycache__
+*.pyc
+.db
+*.sqlite3
+*.sqlite3-journal
+local_settings.py
+media/
+
+# Django static and media files
+/static
+/MEDIA
+
+# Virtualenv
+.venv/
+my-venv/
+ENV/
+
+# PyCharm/IntelliJ
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfvars
+terraform.tfvars
+terraform.tfplan
+*.tfstate.d/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node (if you're using it in your Django project for frontend work)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Other common directories to ignore
+cache/
+tmp/
