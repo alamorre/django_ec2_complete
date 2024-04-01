@@ -82,13 +82,13 @@ resource "aws_security_group" "rds_sg" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"] # Updated to VPC CIDR for private access
+    cidr_blocks = ["0.0.0.0/0"] # Updated to "10.0.0.0/16"
   }
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"] # Updated to VPC CIDR for private access
+    cidr_blocks = ["0.0.0.0/0"] # Updated to "10.0.0.0/16"
   }
   tags = {
     Name = "RDS_Security_Group"
@@ -116,6 +116,13 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 # Define variable for RDS password to avoid hardcoding secrets
+variable "secret_key" {
+  description = "The Secret Key for Django"
+  type        = string
+  sensitive   = true
+}
+
+
 variable "db_password" {
   description = "The password for the database"
   type        = string
@@ -136,7 +143,7 @@ resource "aws_db_instance" "default" {
   db_subnet_group_name   = aws_db_subnet_group.default.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   skip_final_snapshot    = true
-  publicly_accessible    = false # Changed to false for private access
+  publicly_accessible    = true # Changed to false for private access
   multi_az               = false
   tags = {
     Name = "Django_RDS_Instance"
@@ -153,18 +160,65 @@ resource "aws_instance" "web" {
   associate_public_ip_address = true # Assigns a public IP address to your instance
   user_data_replace_on_change = true # Replace the user data when it changes
 
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+
   user_data = <<-EOF
     #!/bin/bash
     set -ex
-    sudo yum update -y
-    sudo yum install -y yum-utils
-    sudo yum install -y docker
-    sudo service docker start # Start the Docker service
-    sudo docker pull nginx 
-    sudo docker run -d -p 80:80 nginx
+    yum update -y
+    yum install -y yum-utils
+
+    # Install Docker
+    yum install -y docker
+    service docker start 
+
+    # Install AWS CLI
+    yum install -y aws-cli
+
+    # Authenticate to ECR
+    docker login -u AWS -p $(aws ecr get-login-password --region us-east-1) 620457613573.dkr.ecr.us-east-1.amazonaws.com
+
+    # Pull the Docker image from ECR
+    docker pull 620457613573.dkr.ecr.us-east-1.amazonaws.com/django-ec2-complete:latest
+
+    # Run the Docker image
+    docker run -d -p 80:8080 \
+    --env SECRET_KEY=${var.secret_key} \
+    --env DB_NAME=djangodb \
+    --env DB_USER_NM=adam \
+    --env DB_USER_PW=pass1234 \
+    --env DB_IP=${aws_db_instance.default.address} \
+    --env DB_PORT=5432 \
+    620457613573.dkr.ecr.us-east-1.amazonaws.com/django-ec2-complete:latest
     EOF
 
   tags = {
     Name = "Django_EC2_Complete_Server"
   }
+}
+
+# IAM role for EC2 instance to access ECR
+resource "aws_iam_role" "ec2_role" {
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Principal = {
+        Service = "ec2.amazonaws.com",
+      },
+      Effect = "Allow",
+    }],
+  })
+}
+
+# Attach the AmazonEC2ContainerRegistryReadOnly policy to the role
+resource "aws_iam_role_policy_attachment" "ecr_read" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+# IAM instance profile for EC2 instance
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "django_ec2_complete_profile"
+  role = aws_iam_role.ec2_role.name
 }

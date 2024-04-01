@@ -20,13 +20,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(1z(ttx!0+-68vi)mk$o(6kl84^zcd2smci_9b)j$zn$l)w_4m'
+import os 
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -72,11 +73,20 @@ WSGI_APPLICATION = 'django_ec2_complete.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+print(os.getenv('DB_NAME'))
+print(os.getenv('DB_USER_NM'))
+print(os.getenv('DB_USER_PW'))
+print(os.getenv('DB_IP'))
+print(os.getenv('DB_PORT'))
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER_NM'),
+        "PASSWORD": os.getenv('DB_USER_PW'),
+        "HOST": os.getenv('DB_IP'),
+        "PORT": os.getenv('DB_PORT'),
     }
 }
 
