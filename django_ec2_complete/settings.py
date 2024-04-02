@@ -29,6 +29,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = ['https://lamorre.com', 'https://www.lamorre.com']
+
 # Application definition
 
 INSTALLED_APPS = [

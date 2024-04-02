@@ -36,9 +36,21 @@ resource "aws_route53_record" "cert_validation" {
   ttl     = 60
 }
 
-resource "aws_route53_record" "domain" {
+resource "aws_route53_record" "root_record" {
   zone_id = data.aws_route53_zone.selected.zone_id
   name    = "lamorre.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.default.dns_name
+    zone_id                = aws_lb.default.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "www_record" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = "www.lamorre.com"
   type    = "A"
 
   alias {
