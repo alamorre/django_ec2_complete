@@ -75,11 +75,6 @@ WSGI_APPLICATION = 'django_ec2_complete.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-print(os.getenv('DB_NAME'))
-print(os.getenv('DB_USER_NM'))
-print(os.getenv('DB_USER_PW'))
-print(os.getenv('DB_IP'))
-print(os.getenv('DB_PORT'))
 
 DATABASES = {
     'default': {

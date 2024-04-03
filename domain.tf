@@ -1,4 +1,4 @@
-# 
+# Request a certificate for the domain and its www subdomain
 resource "aws_acm_certificate" "cert" {
   domain_name       = "lamorre.com"
   validation_method = "DNS"
@@ -14,12 +14,12 @@ resource "aws_acm_certificate" "cert" {
   }
 }
 
-# 
+# Declare the Route 53 zone for the domain
 data "aws_route53_zone" "selected" {
   name = "lamorre.com"
 }
 
-# 
+# Define the Route 53 records for certificate validation
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
@@ -36,6 +36,7 @@ resource "aws_route53_record" "cert_validation" {
   ttl     = 60
 }
 
+# Define the Route 53 records for the domain and its www subdomain
 resource "aws_route53_record" "root_record" {
   zone_id = data.aws_route53_zone.selected.zone_id
   name    = "lamorre.com"
@@ -60,7 +61,7 @@ resource "aws_route53_record" "www_record" {
   }
 }
 
-# Successful validation of an ACM certificate in concert
+# Define the certificate validation resource
 resource "aws_acm_certificate_validation" "cert" {
   certificate_arn         = aws_acm_certificate.cert.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
@@ -98,7 +99,7 @@ resource "aws_lb" "default" {
   enable_deletion_protection = false
 }
 
-# Target group for the ALB
+# Target group for the ALB to route traffic from ALB to VPC
 resource "aws_lb_target_group" "default" {
   name     = "django-ec2-tg-https"
   port     = 443
@@ -114,7 +115,7 @@ resource "aws_lb_target_group_attachment" "default" {
 }
 
 
-# HTTPS listener for the ALB
+# HTTPS listener for the ALB to route traffic to the target group
 resource "aws_lb_listener" "default" {
   load_balancer_arn = aws_lb.default.arn
   port              = 443
